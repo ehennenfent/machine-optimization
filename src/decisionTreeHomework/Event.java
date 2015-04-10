@@ -29,4 +29,10 @@ abstract public class Event implements Serializable {
 	}
 	
 	abstract public double[] getVars();
+	
+	abstract public double getWeight();
+	
+	abstract public void setWeight(double weight);
+	
+
 }

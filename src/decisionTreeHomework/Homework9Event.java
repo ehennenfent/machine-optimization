@@ -17,6 +17,7 @@ public class Homework9Event extends Event {
 	private double mET;
 	private double qEta;
 	private double cosTheta;
+	private double weight;
 	
 	public Homework9Event(double mlnub, double transverseMass, double jet1ET, double leptonpT, double hT, double mET, double qEta,
 			double cosTheta) {
@@ -29,6 +30,7 @@ public class Homework9Event extends Event {
 		this.mET = mET;
 		this.qEta = qEta;
 		this.cosTheta = cosTheta;
+		this.weight = 1.0;
 	}
 	
 	static private List<String> eventNames() {
@@ -56,6 +58,14 @@ public class Homework9Event extends Event {
 		response[6] = qEta;
 		response[7] = cosTheta;
 		return response;
+	}
+	
+	public double getWeight() {
+		return this.weight;
+	}
+
+	public void setWeight(double weight) {
+		this.weight = weight;
 	}
 
 }

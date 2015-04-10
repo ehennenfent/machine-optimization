@@ -1,5 +1,7 @@
 package decisionTreeHomework;
 
+import java.util.List;
+
 public class Leaf<Type extends Event> {
 
 	private Leaf<Type> output1 = null;
@@ -7,8 +9,8 @@ public class Leaf<Type extends Event> {
 	private double split;
 	private int variable;
 	
-	private int nBackground;
-	private int nSignal;
+	private double nBackground;
+	private double nSignal;
 	
 	public Leaf() {
 		this(0, 0);
@@ -24,7 +26,7 @@ public class Leaf<Type extends Event> {
 	}
 	
 	public double getPurity() {
-		return (double) nSignal / (double)(nSignal + nBackground);
+		return nSignal / (nSignal + nBackground);
 	}
 	
 	public Leaf<Type> getLeftBranch() {
@@ -47,9 +49,18 @@ public class Leaf<Type extends Event> {
 		}
 	}
 	
+	// Used only in level one
+	public int checkEvent(Type event) {
+		if (event.getVars()[variable] <= split) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+	
 	public void train(Data<Type> signal, Data<Type> background) {
-		nSignal = signal.getEvents().size();
-		nBackground = background.getEvents().size();
+		nSignal = getWeightedSize(signal.getEvents());
+		nBackground = getWeightedSize(background.getEvents());
 		
 		boolean branch = chooseVariable(signal, background);
 	
@@ -84,9 +95,6 @@ public class Leaf<Type extends Event> {
 	}
 	
 	private boolean chooseVariable(Data<Type> signal, Data<Type> background) {
-		// TODO set the values of variable and split here		
-		// Return true if you were able to find a useful variable, and false if you were not and want to stop calculation here
-		
 		/* For all the variables in each set, figure out which one has the most significant difference.
 		 * If that difference is greater than some percentage, store it in variable and make 
 		 * split the average of the two averages, then return true. If not, mark this leaf as final
@@ -100,30 +108,32 @@ public class Leaf<Type extends Event> {
 		double[] sigAverages = new double[sigEvent.getNVars()];
 		double[] bkgAverages = new double[noiseEvent.getNVars()];
 		
+		//Find the weighted sum of each variable over all the events.
 		for(Event e : signal.getEvents()){
 			for(int i = 0; i < e.getNVars(); i++){
-				sigAverages[i] += e.getVars()[i];
+				sigAverages[i] += e.getVars()[i]*e.getWeight();
 			}
 		}
 		for(Event e : background.getEvents()){
 			for(int i = 0; i < e.getNVars(); i++){
-				bkgAverages[i] += e.getVars()[i];
+				bkgAverages[i] += e.getVars()[i]*e.getWeight();
 			}
 		}
-		
+		// Divide the weighted sums by the weighted size.
 		for(int i = 0; i < sigAverages.length; i++){
-			sigAverages[i] /= signal.getEvents().size();
+			sigAverages[i] /= getWeightedSize(signal.getEvents());
 		}
 		for(int i = 0; i < bkgAverages.length; i++){
-			bkgAverages[i] /= background.getEvents().size();
+			bkgAverages[i] /= getWeightedSize(background.getEvents());
 		}
-		
+		// Find the percent difference between the average value of each variable.
 		double[] percentDifs = new double[sigAverages.length];
 		for(int i = 0; i < percentDifs.length; i++){
 			double difference = Math.max(sigAverages[i], bkgAverages[i]) - Math.min(sigAverages[i], bkgAverages[i]);
 			double average = (sigAverages[i] + bkgAverages[i]) / 2;
 			percentDifs[i]  = difference / average;
 		}
+		// Find the most significant percent difference.
 		double maxdif = 0;
 		for(int i = 0; i < percentDifs.length; i++){
 			if(percentDifs[i] > maxdif){
@@ -135,7 +145,6 @@ public class Leaf<Type extends Event> {
 		
 		// If, after picking a variable, it doesn't sort either the signal or background very well, we return false
 		// and say this is the final leaf.
-		
 		int greater = 0;
 		int less = 0;
 		for(Event e : signal.getEvents()){
@@ -144,11 +153,8 @@ public class Leaf<Type extends Event> {
 			else
 				less++;
 		}
-//		System.out.println(Math.abs( ((double) (greater - less) / (double)((double)(greater + less)/2) ) - .5));
-//		System.out.println((double) Math.min(greater, less) / (double) (greater + less));
 		if((double) Math.min(greater, less) / (double) (greater + less) < .05)
 			ret = false;
-//		System.out.println(greater + " | " + less);
 		greater = 0;
 		less = 0;
 		for(Event e : background.getEvents()){
@@ -157,14 +163,25 @@ public class Leaf<Type extends Event> {
 			else
 				less++;
 		}
+		// If the fraction of events sorted is less than 5%
 		if((double) Math.min(greater, less) / (double) (greater + less) < .05)
 			ret = false;
 		
-//		System.out.println(greater + " " + less);
-		
-//		System.out.println(getPurity());
-		
 		return ret;
 	}
+	
+	// Private methods will stay private. Wouldn't want a monk to cut me open.
+	public void levelOneChooseVariable(Data<Type> signal, Data<Type> background){
+		chooseVariable(signal, background);
+	}
+	
+	private double getWeightedSize(List<Type> events){
+		double sum = 0;
+		for (Type e : events)
+			sum+= e.getWeight();
+		return sum;
+	}
+	
+	
 
 }
